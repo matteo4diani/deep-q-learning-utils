@@ -244,9 +244,9 @@ class Network(nn.Module):
       params = {k: torch.as_tensor(v, device=self.device) for k,v in params_numpy.items()}
       self.load_state_dict(params)
 
-###################
+###############
 # Model Setup #
-###################
+###############
 
 # Enable GPU support
 device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
