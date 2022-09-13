@@ -20,7 +20,11 @@ from baselines_wrappers import Monitor, DummyVecEnv, SubprocVecEnv
 import msgpack
 from msgpack_numpy import patch as msgpack_numpy_patch
 msgpack_numpy_patch()
-
+print(f"""
+If you are having problems running this notebook outside of Google Colab, check that: 
+- torch has version {torch.__version__} 
+- gym has version {gym.__version__}
+""")
 ##################################
 # Model Constants (taken from:   #
 # "Human-level control through   #
@@ -30,7 +34,7 @@ msgpack_numpy_patch()
 
 # Use Double-Q Learning as defined in:
 # "Deep Reinforcement Learning with Double-Q Learning"
-USE_DOUBLE = False
+USE_DOUBLE = True
 # Discount rate
 GAMMA = 0.99
 # How many transitions to sample from
@@ -46,7 +50,7 @@ EPSILON_END = 0.1
 # Number of steps taken for EPSILON_START to become EPSILON_END
 EPSILON_DECAY = int(1e6)
 # Number of batch elements (environments created)
-N_ENVS = 2
+N_ENVS = 4
 # Periodicity for target updates with the online values
 TARGET_UPDATE_FREQ = 10000 // N_ENVS
 # Learning Rate
@@ -64,11 +68,11 @@ SAVE_PATHS = {True:  '/content/gdrive/MyDrive/deep-q-learning-atari/checkpoints/
 LOG_DIRS = {True: '/content/gdrive/MyDrive/deep-q-learning-atari/tensorboard/atari_model',
             False: 'tensorboard/atari_model'}
 # Use your personal Google Drive for parameter serialization and logs
-USE_DRIVE = True
+USE_DRIVE = False
 # Save parameters to disk/drive
-SAVE_PARAMS = False
+SAVE_PARAMS = True
 # Reload parameters from disk/drive
-RELOAD_PARAMS = True
+RELOAD_PARAMS = False
 # Path for network parameters serialization
 SAVE_PATH = SAVE_PATHS[USE_DRIVE]
 SAVE_INTERVAL = 10000
