@@ -9,8 +9,6 @@ import itertools
 import numpy as np
 import random
 import os
-import sys
-import shutil
 import matplotlib.pyplot as plt
 
 from IPython import display as ipythondisplay
@@ -30,9 +28,9 @@ msgpack_numpy_patch()
 # with some additions (Double Q) #
 ##################################
 
-# Use Double-Q Learning as detailed in:
+# Use Double-Q Learning as defined in:
 # "Deep Reinforcement Learning with Double-Q Learning"
-USE_DOUBLE = True
+USE_DOUBLE = False
 # Discount rate
 GAMMA = 0.99
 # How many transitions to sample from
@@ -48,7 +46,7 @@ EPSILON_END = 0.1
 # Number of steps taken for EPSILON_START to become EPSILON_END
 EPSILON_DECAY = int(1e6)
 # Number of batch elements (environments created)
-N_ENVS = 4
+N_ENVS = 2
 # Periodicity for target updates with the online values
 TARGET_UPDATE_FREQ = 10000 // N_ENVS
 # Learning Rate
@@ -66,9 +64,11 @@ SAVE_PATHS = {True:  '/content/gdrive/MyDrive/deep-q-learning-atari/checkpoints/
 LOG_DIRS = {True: '/content/gdrive/MyDrive/deep-q-learning-atari/tensorboard/atari_model',
             False: 'tensorboard/atari_model'}
 # Use your personal Google Drive for parameter serialization and logs
-USE_DRIVE = False
+USE_DRIVE = True
+# Save parameters to disk/drive
+SAVE_PARAMS = False
 # Reload parameters from disk/drive
-RELOAD_PARAMS = False
+RELOAD_PARAMS = True
 # Path for network parameters serialization
 SAVE_PATH = SAVE_PATHS[USE_DRIVE]
 SAVE_INTERVAL = 10000
@@ -319,12 +319,30 @@ for _ in range(MIN_REPLAY_SIZE):
   # Select random actions
   actions = [env.action_space.sample() for _ in range(N_ENVS)]
 
+  # If we are reloading parameters after a notebook disconnect or OOM error
+  # We build the replay set from the last network saved
+  if RELOAD_PARAMS:
+    # Epsilon decays linearly in time until reaching its final value
+    epsilon = np.interp(int(1e5) * N_ENVS, 
+                        [0, EPSILON_DECAY],
+                        [EPSILON_START, EPSILON_END])
+    # Get the actions from the online network.
+    # If we are using frame-stacking with the custom wrapper
+    # we unwrap observations and stack frames before passing them to net.act(...).
+    # Epsilon-greedy policy is implemented in the net.act method
+    if isinstance(obses[0], PytorchLazyFrames):
+      act_obses = np.stack([o.get_frames() for o in obses])
+      actions = online_net.act(act_obses, EPSILON_START)
+    else:
+      actions = online_net.act(obses, EPSILON_START)
+
+  
   # In the breakout game, we need to call action 1 each time a new game starts
   # to release the projectile from the player's platform.
   # We can help the agent by performing this action for them.
   if FORCE_START:
     actions = [1 if do_init_action[i] else a for i, a in enumerate(actions)]
-
+  
   # We step the environment with the selected actions
   new_obses, rewards, dones, infos = env.step(actions)
   do_init_action = list(dones)
@@ -347,7 +365,6 @@ for _ in range(MIN_REPLAY_SIZE):
   # We set the current observations as past obses for the new cycle
   obses = new_obses
 
- 
 ######################
 # Main Training Loop #
 ######################
@@ -364,10 +381,6 @@ for step in itertools.count():
                       [0, EPSILON_DECAY],
                       [EPSILON_START, EPSILON_END])
   
-  # Get the actions from the online network.
-  # If we are using frame-stacking with the custom wrapper
-  # we unwrap observations and stack frames before passing them to net.act(...).
-  # Epsilon-greedy policy is implemented in the net.act method
   if isinstance(obses[0], PytorchLazyFrames):
     act_obses = np.stack([o.get_frames() for o in obses])
     actions = online_net.act(act_obses, epsilon)
@@ -432,10 +445,7 @@ for step in itertools.count():
     print('Episodes', episode_count)
 
   # Save Network Parameters
-  if step % SAVE_INTERVAL == 0 and step != 0:
-    print('Saving...')
-    online_net.save(SAVE_PATH)
-
-
-
-
+  if SAVE_PARAMS:
+    if step % SAVE_INTERVAL == 0 and step != 0:
+      print('Saving...')
+      online_net.save(SAVE_PATH)
