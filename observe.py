@@ -67,13 +67,13 @@ class Network(nn.Module):
             params_numpy = msgpack.loads(f.read())
 
         params = {k: torch.as_tensor(v, device=self.device) for k,v in params_numpy.items()}
-
+        print(params)
         self.load_state_dict(params)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('device:', device)
 
-make_env = lambda: make_atari_deepmind('Breakout-v0')
+make_env = lambda: make_atari_deepmind('BreakoutNoFrameskip-v4', render=True)
 
 vec_env = DummyVecEnv([make_env for _ in range(1)])
 
@@ -82,7 +82,7 @@ env = BatchedPytorchFrameStack(vec_env, k=4)
 net = Network(env, device)
 net = net.to(device)
 
-net.load('./atari_model.pack')
+net.load('checkpoints/atari_model_early_2.pack')
 
 obs = env.reset()
 beginning_episode = True
@@ -98,8 +98,8 @@ for t in itertools.count():
         beginning_episode = False
 
     obs, rew, done, _ = env.step(action)
-    env.render()
-    time.sleep(0.02)
+    #env.render()
+    #time.sleep(0.02)
 
     if done[0]:
         obs = env.reset()
