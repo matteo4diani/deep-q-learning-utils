@@ -20,10 +20,10 @@ from baselines_wrappers import Monitor, DummyVecEnv, SubprocVecEnv
 import msgpack
 from msgpack_numpy import patch as msgpack_numpy_patch
 msgpack_numpy_patch()
-print(f"""
+print("""
 If you are having problems running this notebook outside of Google Colab, check that: 
-- torch has version {torch.__version__} 
-- gym has version {gym.__version__}
+- torch has version 1.12.1+cu113 (+cu113 stands for CUDA 11.3) 
+- gym has version 0.25.1
 """)
 ##################################
 # Model Constants (taken from:   #
